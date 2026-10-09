@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: tracker
+      POSTGRES_DB: tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./server/db/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      # creates the separate tracker_test database used by `npm test`
+      - ./server/db/create-test-db.sql:/docker-entrypoint-initdb.d/00-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build: ./server
+    environment:
+      NODE_ENV: development   # local stack only; real deployments use production
+      DATABASE_URL: postgres://tracker:tracker@db:5432/tracker
+      # Override with: JWT_SECRET=... docker compose up   (dev default is fine locally)
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-do-not-use-in-production}
+      CLIENT_URL: http://localhost:8080
+      TRUST_PROXY: "1"        # requests arrive through the nginx container
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  pgdata:
