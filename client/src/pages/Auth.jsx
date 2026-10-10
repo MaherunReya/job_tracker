@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { api, setToken } from '../api.js';
+import ResendVerification from '../components/ResendVerification.jsx';
 
 export default function Auth({ mode, onAuth }) {
   const isRegister = mode === 'register';
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [sent, setSent] = useState(null); // set after signing up: { email, emailSent }
   const [busy, setBusy] = useState(false);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -12,19 +15,45 @@ export default function Auth({ mode, onAuth }) {
   async function submit(e) {
     e.preventDefault();
     setError('');
+    setNeedsVerify(false);
     setBusy(true);
     try {
       const name = form.name.trim();
       const credentials = { email: form.email, password: form.password };
-      // The API rejects an empty name, so only send it when the user typed one.
-      const body = isRegister ? { ...credentials, ...(name ? { name } : {}) } : credentials;
-      const { token, user } = await api[mode](body);
+      if (isRegister) {
+        // The API rejects an empty name, so only send it when the user typed one.
+        const res = await api.register({ ...credentials, ...(name ? { name } : {}) });
+        setSent({ email: res.email, emailSent: res.emailSent });
+        setBusy(false);
+        return;
+      }
+      const { token, user } = await api.login(credentials);
       setToken(token);
       onAuth(user);
     } catch (err) {
       setError(err.message);
+      setNeedsVerify(err.code === 'EMAIL_NOT_VERIFIED');
       setBusy(false);
     }
+  }
+
+  if (sent) {
+    return (
+      <div className="auth-wrap">
+        <div className="auth">
+          <h1>Check your email</h1>
+          <p className="muted">
+            We sent a verification link to <strong>{sent.email}</strong>. Open it to activate your account.
+            The link expires in 24 hours.
+          </p>
+          {!sent.emailSent && (
+            <p className="error">We could not send the email just now. Use the button below to try again.</p>
+          )}
+          <ResendVerification email={sent.email} />
+          <p className="muted switch">Wrong address? <a href="#/signup" onClick={() => setSent(null)}>Start over</a></p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -53,6 +82,7 @@ export default function Auth({ mode, onAuth }) {
           />
         </label>
         {error && <p className="error" role="alert">{error}</p>}
+        {needsVerify && <ResendVerification email={form.email} />}
         <button type="submit" disabled={busy}>
           {busy ? 'Please wait...' : isRegister ? 'Create account' : 'Log in'}
         </button>

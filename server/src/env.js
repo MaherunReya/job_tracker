@@ -12,6 +12,13 @@ function validateEnv(env = process.env) {
     if (/change-me/i.test(secret)) errors.push('JWT_SECRET must not be a placeholder value in production');
   }
 
+  // Verification emails must really be sent in production, so refuse to start without SMTP.
+  if (env.NODE_ENV === 'production') {
+    for (const key of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'EMAIL_FROM', 'CLIENT_URL']) {
+      if (!env[key]) errors.push(`${key} is required in production (email verification sends real emails)`);
+    }
+  }
+
   if (errors.length) {
     throw new Error(`Invalid environment configuration:\n - ${errors.join('\n - ')}`);
   }

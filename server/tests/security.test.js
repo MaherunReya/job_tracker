@@ -30,7 +30,16 @@ describe('security headers', () => {
 });
 
 describe('validateEnv', () => {
-  const ok = { DATABASE_URL: 'postgres://x', JWT_SECRET: 'a'.repeat(40), NODE_ENV: 'production' };
+  const ok = {
+    DATABASE_URL: 'postgres://x',
+    JWT_SECRET: 'a'.repeat(40),
+    NODE_ENV: 'production',
+    SMTP_HOST: 'smtp.example.com',
+    SMTP_USER: 'user',
+    SMTP_PASS: 'pass',
+    EMAIL_FROM: 'Job Tracker <me@example.com>',
+    CLIENT_URL: 'https://app.example.com',
+  };
 
   test('accepts a valid production config', () => {
     expect(() => validateEnv(ok)).not.toThrow();
@@ -41,6 +50,14 @@ describe('validateEnv', () => {
   test('rejects short or placeholder secrets in production', () => {
     expect(() => validateEnv({ ...ok, JWT_SECRET: 'short' })).toThrow(/32 characters/);
     expect(() => validateEnv({ ...ok, JWT_SECRET: 'change-me-in-production-please-0000000' })).toThrow(/placeholder/);
+  });
+  test('requires email settings in production', () => {
+    const { SMTP_HOST, EMAIL_FROM, ...rest } = ok;
+    expect(() => validateEnv(rest)).toThrow(/SMTP_HOST is required in production/);
+    expect(() => validateEnv(rest)).toThrow(/EMAIL_FROM is required in production/);
+  });
+  test('does not require email settings in development', () => {
+    expect(() => validateEnv({ DATABASE_URL: 'postgres://x', JWT_SECRET: 'dev', NODE_ENV: 'development' })).not.toThrow();
   });
   test('allows a short secret outside production', () => {
     expect(() => validateEnv({ ...ok, NODE_ENV: 'development', JWT_SECRET: 'dev' })).not.toThrow();

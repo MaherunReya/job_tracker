@@ -5,6 +5,7 @@ import Navbar from './components/Navbar.jsx';
 import Home from './pages/Home.jsx';
 import Auth from './pages/Auth.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Verify from './pages/Verify.jsx';
 
 export default function App() {
   const path = useRoute();
@@ -31,7 +32,8 @@ export default function App() {
   let page = null;
   if (ready) {
     if (path === '/dashboard') page = user ? <Dashboard user={user} /> : null;
-    else if (path === '/login' || path === '/signup') page = user ? null : <Auth mode={path === '/signup' ? 'register' : 'login'} onAuth={onAuth} />;
+    else if (path === '/login' || path === '/signup') page = user ? null : <Auth key={path} mode={path === '/signup' ? 'register' : 'login'} onAuth={onAuth} />;
+    else if (path === '/verify') page = <Verify onAuth={onAuth} />;
     else page = <Home user={user} />;
   }
 

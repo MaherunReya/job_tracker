@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
 // ---- tiny hash router: works on any static host with no server config ----
-export const getPath = () => window.location.hash.slice(1) || '/';
+export const getPath = () => window.location.hash.slice(1).split('?')[0] || '/';
+export const getQuery = () => new URLSearchParams(window.location.hash.split('?')[1] || '');
 export const navigate = (to) => { window.location.hash = to; };
 
 export function useRoute() {

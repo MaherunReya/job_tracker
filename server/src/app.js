@@ -30,6 +30,22 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Verification links are 256-bit random tokens, so guessing is hopeless; this just stops floods.
+app.use('/api/auth/verify-email', rateLimit({
+  ...limiterOptions,
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.VERIFY_RATE_LIMIT_MAX) || 30,
+  message: { error: 'Too many attempts, please try again later' },
+}));
+
+// Every resend sends a real email, so keep this tight.
+app.use('/api/auth/resend-verification', rateLimit({
+  ...limiterOptions,
+  windowMs: 60 * 60 * 1000,
+  limit: Number(process.env.RESEND_RATE_LIMIT_MAX) || 5,
+  message: { error: 'Too many emails requested, please try again later' },
+}));
+
 // Generous limit for everything else.
 app.use('/api', rateLimit({
   ...limiterOptions,

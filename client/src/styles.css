@@ -196,3 +196,9 @@ button.danger { color: var(--danger); }
 .card .row button.link { font-size: 0.85rem; padding: 0.2rem 0.3rem; }
 .card .row { flex-wrap: wrap; row-gap: 0.25rem; }
 .card .row select { max-width: 100px; }
+
+/* Email verification */
+.resend { display: grid; gap: 0.6rem; }
+.resend label { display: grid; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+.resend p { margin: 0; font-size: 0.9rem; }
+.auth strong { word-break: break-all; }

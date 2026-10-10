@@ -17,13 +17,19 @@ async function request(path, options = {}) {
   });
   if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  if (!res.ok) {
+    const err = new Error(data.error || 'Something went wrong');
+    err.code = data.code; // e.g. EMAIL_NOT_VERIFIED
+    throw err;
+  }
   return data;
 }
 
 export const api = {
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  verifyEmail: (body) => request('/auth/verify-email', { method: 'POST', body: JSON.stringify(body) }),
+  resendVerification: (body) => request('/auth/resend-verification', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/auth/me'),
   list: (q = '') => request(`/applications${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   create: (body) => request('/applications', { method: 'POST', body: JSON.stringify(body) }),
